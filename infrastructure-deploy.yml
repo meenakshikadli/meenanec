@@ -1,0 +1,15 @@
+# Pipeline for creating firewall, rules, attaching rules to the server
+
+trigger: none
+pr: none
+
+pool: hcm-agents-pool
+
+jobs:
+- job: firewall_rules_creation
+  displayName: 'firewall rules creation'
+  steps:
+  # Copying terraform templates to backend server
+  - template: pipeline-jobs/copy_terraform_template_to_backend_server.yml  
+  # Executing terraform commands 
+  - template: pipeline-jobs/executing_terraform_commands.yml

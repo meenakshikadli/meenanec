@@ -1,0 +1,15 @@
+# ftp server creation and user configuration 
+parameters: 
+  - name: ftpFirewallId 
+
+steps:
+- task: PowerShell@2
+  displayName: 'ftp - Create server, attach volume and configure'
+  inputs:
+    targetType: 'inline'
+    script: |
+      cd $(System.DefaultWorkingDirectory)/Infrastructure/deployment-templates/ftp/terraform-templates
+      terraform init 
+      terraform plan -input=false -var 'hcloud_token=$(ftp_hcloud_token)' -var 'server_name=$(ftp_server_name)' -var 'location=$(ftp_location)' -var 'ssh_key_name=["$(ftp_ssh_key_name)"]' -var 'network_id=$(ftp_network_id)' -var 'private_ip=["$(ftp_private_ip)"]' -var 'volume_name=$(ftp_volume_name)' -var 'volume_size=$(ftp_volume_size)' -var 'private_key=$(System.DefaultWorkingDirectory)/Infrastructure/deployment-templates/ssh-keys/$(ftp_private_key_file_name)'   -var 'netmaker_access_token=$(ftp_netmaker_access_token)' -var 'ftp_group_name=$(ftp_group_name)' -var 'ftp_username=$(ftp_username)' -var 'ftp_user_password=$(ftp_user_paasword)' -var 'firewall_id=${{ parameters.ftpFirewallId }}' -var 'qualysActivationId=$(qualys_ActivationId)' -var 'qualysCustomerId=$(qualys_CustomerId)' -var 'sentinelone_group_token=$(sentinelone_agent_group_token)' -out=tfplan
+      terraform apply -auto-approve tfplan
+    failOnStdErr: false

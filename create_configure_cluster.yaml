@@ -1,0 +1,29 @@
+# Create kubernetes cluster with service endpoint
+parameters:
+  - name: kubernetes_hetzner_api_token
+  - name: kubernetes_env_name
+  - name: kubernetes_location
+  - name: kubernetes_ssh_key_name
+  - name: kubernetes_private_key_file_name
+  - name: kubernetes_network_ip_range
+  - name: kubernetes_server_type
+  - name: kubernetes_volume_size
+  - name: kubernetes_load_balancer_name
+  - name: kubernetes_service_connection_name
+  - name: kubernetes_firewall_id
+  - name: kubernetes_netmaker_access_token
+  - name: kubernetes_longhorn_users
+  - name: kubernetes_longhorn_domain    
+
+steps:
+  # creation of kubernetes cluster nodes using terraform
+  - task: PowerShell@2
+    displayName: 'Kubernetes-Create kubernetes cluster nodes'
+    inputs:
+      targetType: 'inline'
+      script: |
+        cd $(System.DefaultWorkingDirectory)/Infrastructure/deployment-templates/kubernetes/terraform-templates
+        terraform init 
+        terraform plan -input=false -var 'hcloud_token=${{ parameters.kubernetes_hetzner_api_token }}' -var 'env_name=${{ parameters.kubernetes_env_name }}' -var 'network_ip_range=${{ parameters.kubernetes_network_ip_range }}' -var 'server_type=${{ parameters.kubernetes_server_type }}' -var 'volume_size=${{ parameters.kubernetes_volume_size }}' -var 'load_balancer_name=${{ parameters.kubernetes_load_balancer_name }}' -var 'location=${{ parameters.kubernetes_location }}' -var 'ssh_key_name=["${{ parameters.kubernetes_ssh_key_name }}"]' -var 'private_key=$(System.DefaultWorkingDirectory)/Infrastructure/deployment-templates/ssh-keys/${{ parameters.kubernetes_private_key_file_name }}' -var 'private_key_name=${{ parameters.kubernetes_private_key_file_name }}' -var 'netmaker_access_token=${{ parameters.kubernetes_netmaker_access_token }}' -var 'firewall_id=${{ parameters.kubernetes_firewall_id }}' -var 'service_endpoint_name=${{ parameters.kubernetes_service_connection_name }}' -var 'longhorn_users=${{ parameters.kubernetes_longhorn_users }}' -var 'longhorn_domain=${{ parameters.kubernetes_longhorn_domain }}' -var 'longhorn_admin_password=$(longhorn_admin_password)' -var 'org_service_url=$(azure_org_service_url)' -var 'project_id=$(azure_project_id)' -var 'personal_access_token=$(azure_personal_access_token)' -var 'qualysActivationId=$(qualys_ActivationId)' -var 'qualysCustomerId=$(qualys_CustomerId)' -var 'acr_password=$(acr_password)'  -var 'agent_version=$(sentinelone_agent_version)' -var 'group_token=$(sentinelone_group_token)' -var 'agent_tag=$(sentinelone_agent_tag)' -var 'docker_server=$(sentinelone_docker_server)' -var 'docker_username=$(sentinelone_docker_username)' -var 'docker_password=$(sentinelone_docker_password)' -out=tfplan
+        terraform apply -auto-approve tfplan
+      failOnStdErr: false
