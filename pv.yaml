@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv
+  labels:
+    type: longhorn
+  annotations:
+    volume.beta.kubernetes.io/storage-class: longhorn
+    volume.beta.kubernetes.io/type: ssd
+    volume.beta.kubernetes.io/numberOfReplicas: "2"
+spec:
+  storageClassName: longhorn
+  volumeMode: Filesystem
+  capacity:
+    storage: "{{ .Values.storage }}"
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: "{{ .Values.longhornVolumeName }}"
