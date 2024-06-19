@@ -1,0 +1,88 @@
+# Deploying services
+parameters:
+  - name: environment
+  - name: infraList
+    type: object
+
+jobs:
+  - deployment:
+    displayName: Deploy Infra
+    environment: ${{ parameters.environment }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - ${{ each infra in parameters.infraList }}:
+
+            - ${{ if and(eq(infra.Key, 'netmaker'), eq(infra.Value, 'true')) }}:
+              - template: netmaker/pipeline-files/pipeline-jobs/copy_configuration_files.yml
+              - template: netmaker/pipeline-files/pipeline-jobs/netmaker_server_creation.yml
+
+            # Kubernetes cluster creation and configuration
+            - ${{ if and(eq(infra.Key, 'kubernetes'), eq(infra.Value, 'true')) }}:
+              - template: kubernetes/pipeline-files/create_configure_cluster.yaml
+                parameters:
+                  kubernetes_hetzner_api_token: ${{ parameters.infraList.kubernetes_hetzner_api_token }}
+                  kubernetes_env_name: ${{ parameters.infraList.kubernetes_env_name }}
+                  kubernetes_location: ${{ parameters.infraList.kubernetes_location }}
+                  kubernetes_ssh_key_name: ${{ parameters.infraList.kubernetes_ssh_key_name }}
+                  kubernetes_private_key_file_name: ${{ parameters.infraList.kubernetes_private_key_file_name }}
+                  kubernetes_network_ip_range: ${{ parameters.infraList.kubernetes_network_ip_range }}
+                  kubernetes_server_type: ${{ parameters.infraList.kubernetes_server_type }}
+                  kubernetes_volume_size: ${{ parameters.infraList.kubernetes_volume_size }}
+                  kubernetes_load_balancer_name: ${{ parameters.infraList.kubernetes_load_balancer_name }}
+                  kubernetes_service_connection_name: ${{ parameters.infraList.kubernetes_service_connection_name }}
+                  kubernetes_firewall_id: ${{ parameters.infraList.kubernetes_firewall_id }}
+                  kubernetes_netmaker_access_token: ${{ parameters.infraList.kubernetes_netmaker_access_token }}
+                  kubernetes_longhorn_users: ${{ parameters.infraList.kubernetes_longhorn_users }}
+                  kubernetes_longhorn_domain: ${{ parameters.infraList.kubernetes_longhorn_domain }}
+
+            # FTP server creation and Configuration
+            - ${{ if and(eq(infra.Key, 'ftp'), eq(infra.Value, 'true')) }}:
+              - template: ftp/pipeline-files/ftp_config.yaml
+                parameters:
+                  ftpFirewallId: ${{ parameters.infraList.ftpFirewallId }}
+            
+            # NFS server creation and Configuration  
+            - ${{ if and(eq(infra.Key, 'nfs'), eq(infra.Value, 'true')) }}:
+              - template: nfs/pipeline-files/nfs_file_share_config.yml
+                parameters:
+                  nfsFirewallId: ${{ parameters.infraList.nfsFirewallId }}
+              - template: nfs/pipeline-files/mount_nfs_path.yml
+                parameters:
+                  nfsWorkerServerWgIp: ${{ parameters.infraList.nfsWorkerServerWgIp }}
+                      
+            # Longhorn Deployment
+            - ${{ if and(eq(infra.Key, 'longhorn'), eq(infra.Value, 'true')) }}:
+              - template: longhorn/pipeline-files/deploy_longhorn.yaml
+                parameters:
+                  longhorn_kubernetes_service_endpoint: ${{ parameters.infraList.longhorn_kubernetes_service_endpoint }}
+                  longhornUsers: ${{ parameters.infraList.longhornUsers }}
+                  longhornDomain: ${{ parameters.infraList.longhornDomain }}
+                  longhornTLScert: ${{ parameters.infraList.longhornTLScert }}
+                  longhornMasterWGIp: ${{ parameters.infraList.longhornMasterWGIp }}
+                  longhornSSHKey: ${{ parameters.infraList.longhornSSHKey }}
+                      
+            # SMTP Deployment
+            - ${{ if and(eq(infra.Key, 'smtp'), eq(infra.Value, 'true')) }}:
+              - template: smtp/pipeline-files/configure_smtp.yaml
+            
+            # Namespace Configuration 
+            - ${{ if and(eq(infra.Key, 'namespace_configuration'), eq(infra.Value, 'true')) }}:
+              - template: namespace-configuration/pipeline-files/namespace_configuration.yaml
+                parameters:
+                  kubernetes_service_endpoint: ${{ parameters.infraList.kubernetes_service_endpoint }}
+                  namespace: ${{ parameters.infraList.namespace }}
+                  namespaceTLS: ${{ parameters.infraList.namespaceTLS }}
+
+            # RBAC config Creation
+            - ${{ if and(eq(infra.Key, 'rbac-config'), eq(infra.Value, 'true')) }}:
+              - template: rbac/pipeline-files/create_config.yaml
+                parameters:
+                  rbac_kubernetes_service_endpoint: ${{ parameters.infraList.rbac_kubernetes_service_endpoint }}
+                  rbacMasterWGIp: ${{ parameters.infraList.rbacMasterWGIp }}
+                  rbacSSHKey: ${{ parameters.infraList.rbacSSHKey }}
+                  rbacClusterName: ${{ parameters.infraList.rbacClusterName }}
+                  rbacNamespace: ${{ parameters.infraList.rbacNamespace }}
+                  rbacTeamName: ${{ parameters.infraList.rbacTeamName }}

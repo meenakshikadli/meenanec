@@ -1,0 +1,155 @@
+# master pipeline to deploy each services in different environments
+trigger: none
+
+pr: none
+
+pool: hcm-agents-pool
+
+parameters:
+
+- name: netmaker
+  type: boolean
+  default: false
+
+- name: kubernetes
+  type: boolean
+  default: false
+- name: kubernetes_hetzner_api_token
+  displayName: Enter Hetzner API Token
+  default: API Token
+- name: kubernetes_env_name
+  displayName: Enter env name (e.g., SO-D1F)
+  default: ENV
+- name: kubernetes_location
+  displayName: Enter location name
+  default: nbg1 | fsn1
+- name: kubernetes_ssh_key_name
+  displayName: Enter SSH key name created in Hetzner Project
+  default: SSH Key name
+- name: kubernetes_private_key_file_name
+  displayName: Enter the private key name
+  default: Private Key name
+- name: kubernetes_network_ip_range
+  displayName: Enter network range
+  default: 0.0.0.0/0
+- name: kubernetes_server_type
+  displayName: Enter server type
+  default: cpx31
+- name: kubernetes_volume_size
+  displayName: Enter volume size
+  default: '100'
+- name: kubernetes_load_balancer_name
+  displayName: Enter load balancer name
+  default: Load Balancer name
+- name: kubernetes_service_connection_name
+  displayName: Enter kubernetes service endpoint name
+  default: Kubernetes Service Endpoint
+- name: kubernetes_firewall_id
+  displayName: Enter firewall ID
+  default: Firewall ID
+- name: kubernetes_netmaker_access_token
+  displayName: Enter Netmaker vnet access token
+  default: Netmaker Access Token
+- name: kubernetes_longhorn_users
+  displayName: Enter List of the users (KMD Initial)
+  default: abc xyz
+- name: kubernetes_longhorn_domain
+  displayName: Enter domain name for lonhorn
+  default: longhorn domain name
+
+- name: ftp
+  type: boolean
+  default: false
+- name: ftpFirewallId
+  displayName: Enter Firewall ID for FTP Server
+  default: 'Enter Firewall ID'
+
+- name: nfs
+  type: boolean
+  default: false
+- name: nfsFirewallId
+  displayName: Enter Firewall ID for NFS Server
+  default: 'Enter Firewall ID'
+- name: nfsWorkerServerWgIp
+  type: object
+  displayName: Enter WireGuard IP of Worker Nodes for mounting
+  default:
+  - WG IP of Worker Server 1
+  - WG IP of Worker Server 2
+
+- name: longhorn
+  type: boolean
+  default: false
+- name: longhorn_kubernetes_service_endpoint
+  displayName: 'Enter Kubernetes Service Connection'
+  default: Kubernetes Service Connection 
+- name: longhornUsers
+  displayName: Enter set of Username and Password for Longhorn-UI access
+  default: "'user1 password1' 'user2 password2'"
+- name: longhornDomain
+  displayName: Enter URL/ Domain name for longhorn UI
+  default: Enter lonhorn UI URL
+- name: longhornTLScert
+  displayName: 'Enter TLS cert/key file name'
+  default: 'Enter file name'
+- name: longhornMasterWGIp
+  displayName: 'Enter WireGuard IP of the master node'
+  default: 'Enter WireGuard IP'
+- name: longhornSSHKey
+  displayName: 'Enter SSH Private key file name'
+  default: 'Enter SSH PPK file name'
+
+- name: smtp
+  type: boolean
+  default: false
+
+- name: namespace_configuration
+  type: boolean
+  default: false
+- name: kubernetes_service_endpoint
+  displayName: 'Enter Kubernetes Service Connection'
+  default: Kubernetes Service Connection 
+- name: namespace
+  type: object
+  displayName: 'Enter name for different namespaces'
+  default:
+  - Enter namespace
+- name: namespaceTLS
+  displayName: 'Enter name of the TLS cert/key file'
+  default: Enter the file name
+
+- name: rbac-config
+  type: boolean
+  default: false
+- name: rbac_kubernetes_service_endpoint
+  displayName: 'Enter Kubernetes Service Connection'
+  default: Kubernetes Service Connection 
+- name: rbacMasterWGIp
+  displayName: 'Enter WireGuard IP of the master node'
+  default: 'Enter WireGuard IP'
+- name: rbacSSHKey
+  displayName: 'Enter SSH Private key file name'
+  default: 'Enter SSH PPK file name'
+- name: rbacClusterName
+  displayName: 'Enter cluster/env name'
+  default: 'Enter Cluster Name'
+- name: rbacTeamName
+  displayName: 'Enter Team name'
+  default: 'Enter Team name'
+- name: rbacNamespace
+  type: object
+  displayName: 'Enter namespace'
+  default:
+  - namespace-1
+  - namespace-2
+
+stages:
+- stage: Deploy_Infra
+  displayName: Deploying Infra
+  variables:
+  - group: hcm-devops-infra
+  jobs:
+  - template: deployment.yml
+    parameters:
+      environment: HCM-DevOps-Infra
+      infraList: ${{ parameters }}
